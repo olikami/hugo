@@ -17,13 +17,13 @@ background color
 
 compression
 : {{< new-in 0.153.5 />}}
-: The encoding strategy, applicable to AVIF and WebP images. Options are `lossy` or `lossless`. This defaults to the format-specific `compression` setting in your [imaging configuration][].
+: The encoding strategy, applicable to AVIF, JPEG XL, and WebP images. Options are `lossy` or `lossless`. This defaults to the format-specific `compression` setting in your [imaging configuration][].
 
 dimensions
 : The dimensions of the resulting image, in pixels. The format is `WIDTHxHEIGHT` where `WIDTH` and `HEIGHT` are whole numbers. When resizing an image, you may specify only the width (such as `600x`) or only the height (such as `x400`) for proportional scaling. Specifying both width and height when resizing an image may result in non-proportional scaling. When cropping, fitting, or filling, you must provide both width and height such as `600x400`.
 
 format
-: The format of the resulting image. Valid options include `avif`, `bmp`, `gif`, `jpeg`, `png`, `tiff`, or `webp`. This defaults to the format of the source image.
+: The format of the resulting image. Valid options include `avif`, `bmp`, `gif`, `jpeg`, `jxl`, `png`, `tiff`, or `webp`. This defaults to the format of the source image.
 
 hint
 : The content hint, applicable to AVIF and WebP images. Valid options include `drawing`, `icon`, `photo`, `picture`, or `text`. This defaults to the format-specific `hint` setting in your [imaging configuration][].
@@ -37,7 +37,7 @@ hint
   `text`|Image that is primarily text
 
 quality
-: The visual fidelity, applicable to JPEG images and to AVIF and WebP images when using `lossy` compression. The format is `qQUALITY` where `QUALITY` is a whole number between `1` and `100`, inclusive. Lower numbers prioritize smaller file size, while higher numbers prioritize visual clarity. This defaults to the format-specific `quality` setting in your [imaging configuration][].
+: The visual fidelity, applicable to JPEG images and to AVIF, JPEG XL, and WebP images when using `lossy` compression. The format is `qQUALITY` where `QUALITY` is a whole number between `1` and `100`, inclusive. Lower numbers prioritize smaller file size, while higher numbers prioritize visual clarity. This defaults to the format-specific `quality` setting in your [imaging configuration][].
 
 resampling filter
 : The algorithm used to calculate new pixels when resizing, fitting, or filling an image. Common options include `box`, `lanczos`, `catmullRom`, `mitchellNetravali`, `linear`, or `nearestNeighbor`. This defaults to the `resampleFilter` setting in your [imaging configuration][].

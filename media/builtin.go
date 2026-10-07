@@ -31,6 +31,7 @@ type BuiltinTypes struct {
 	BMPType  Type
 	WEBPType Type
 	AVIFType Type
+	JXLType  Type
 	HEIFType Type
 	HEICType Type
 
@@ -93,6 +94,7 @@ var Builtin = BuiltinTypes{
 	BMPType:  Type{Type: "image/bmp"},
 	WEBPType: Type{Type: "image/webp"},
 	AVIFType: Type{Type: "image/avif"},
+	JXLType:  Type{Type: "image/jxl"},
 	HEIFType: Type{Type: "image/heif"},
 	HEICType: Type{Type: "image/heic"},
 
@@ -155,6 +157,7 @@ var defaultMediaTypesConfig = map[string]any{
 	"image/bmp":  map[string]any{"suffixes": []string{"bmp"}},
 	"image/webp": map[string]any{"suffixes": []string{"webp"}},
 	"image/avif": map[string]any{"suffixes": []string{"avif"}},
+	"image/jxl":  map[string]any{"suffixes": []string{"jxl"}},
 	"image/heif": map[string]any{"suffixes": []string{"heif"}},
 	"image/heic": map[string]any{"suffixes": []string{"heic"}},
 

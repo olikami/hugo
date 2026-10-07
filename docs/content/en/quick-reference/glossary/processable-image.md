@@ -8,6 +8,7 @@ A _processable image_ is an image file characterized by one of the following [_m
   - `image/bmp`
   - `image/gif`
   - `image/jpeg`
+  - `image/jxl`
   - `image/png`
   - `image/tiff`
   - `image/webp`

@@ -527,6 +527,57 @@ Home.
 	imagetesting.RunGolden(opts)
 }
 
+func TestImagesGoldenProcessJxl(t *testing.T) {
+	t.Parallel()
+	htesting.SkipSlowWasmTestOn32Bit(t)
+
+	if imagetesting.SkipGoldenTests {
+		t.Skip("Skip golden test on this architecture")
+	}
+
+	// Will be used as the base folder for generated images.
+	name := "process/jxl"
+
+	files := `
+-- hugo.toml --
+-- assets/sunset.jxl --
+sourcefilename: ../testdata/jxl/sunset.jxl
+-- assets/giphy.jxl --
+sourcefilename: ../testdata/jxl/giphy.jxl
+-- assets/sunset.jpg --
+sourcefilename: ../testdata/sunset.jpg
+-- assets/fuzzycircle.webp --
+sourcefilename: ../testdata/webp/fuzzy-cirlcle-transparent-32.webp
+-- assets/gopher.png --
+sourcefilename: ../testdata/bw-gopher.png
+-- layouts/home.html --
+Home.
+{{ $sunsetJxl := resources.Get "sunset.jxl" }}
+{{ $giphy := resources.Get "giphy.jxl" }}
+{{ $sunset := resources.Get "sunset.jpg" }}
+{{ $fuzzyCircle := resources.Get "fuzzycircle.webp" }}
+{{ $gopher := resources.Get "gopher.png" }}
+
+{{ template "process" (dict "spec" "resize 300x" "img" $sunsetJxl) }}
+{{ template "process" (dict "spec" "resize 300x jpg" "img" $sunsetJxl) }}
+{{ template "process" (dict "spec" "resize 300x jxl" "img" $sunset) }}
+{{ template "process" (dict "spec" "resize 300x jxl q50" "img" $sunset) }}
+{{ template "process" (dict "spec" "resize 100x jxl lossless" "img" $sunset) }}
+{{ template "process" (dict "spec" "crop 300x300 smart jxl" "img" $fuzzyCircle) }}
+{{ template "process" (dict "spec" "jxl" "img" $gopher) }}
+{{ template "process" (dict "spec" "resize 100x" "img" $giphy) }}
+{{ template "process" (dict "spec" "resize 100x gif" "img" $giphy) }}
+
+` + goldenProcess
+
+	opts := imagetesting.DefaultGoldenOpts
+	opts.T = t
+	opts.Name = name
+	opts.Files = files
+
+	imagetesting.RunGolden(opts)
+}
+
 func TestImagesGoldenProcessAviStraws(t *testing.T) {
 	t.Parallel()
 	htesting.SkipSlowWasmTestOn32Bit(t)

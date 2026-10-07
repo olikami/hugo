@@ -90,10 +90,10 @@ var allDecoderSetups = map[string]decodeWeight{
 		decode: func(d decodeWeight, p decodeConfig) error {
 			m := p.p.GetStringMap(d.key)
 			if _, found := m["quality"]; found {
-				hugo.DeprecateWithLogger("project config key imaging.quality", "Set the quality per format instead with imaging.jpeg.quality, imaging.webp.quality and/or imaging.avif.quality.", "v0.163.0", p.logger.Logger())
+				hugo.DeprecateWithLogger("project config key imaging.quality", "Set the quality per format instead with imaging.jpeg.quality, imaging.webp.quality, imaging.avif.quality and/or imaging.jxl.quality.", "v0.163.0", p.logger.Logger())
 			}
 			if _, found := m["compression"]; found {
-				hugo.DeprecateWithLogger("project config key imaging.compression", "Set the compression type per format instead with imaging.webp.compression and/or imaging.avif.compression.", "v0.163.0", p.logger.Logger())
+				hugo.DeprecateWithLogger("project config key imaging.compression", "Set the compression type per format instead with imaging.webp.compression, imaging.avif.compression and/or imaging.jxl.compression.", "v0.163.0", p.logger.Logger())
 			}
 			if _, found := m["hint"]; found {
 				hugo.DeprecateWithLogger("project config key imaging.hint", "Set the hint per format instead with imaging.webp.hint and/or imaging.avif.hint.", "v0.163.0", p.logger.Logger())

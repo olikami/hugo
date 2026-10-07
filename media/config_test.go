@@ -135,6 +135,7 @@ func TestDefaultTypes(t *testing.T) {
 		{Builtin.JSONType, "application", "json", "json", "application/json", "application/json"},
 		{Builtin.RSSType, "application", "rss", "xml,rss", "application/rss+xml", "application/rss+xml"},
 		{Builtin.SVGType, "image", "svg", "svg", "image/svg+xml", "image/svg+xml"},
+		{Builtin.JXLType, "image", "jxl", "jxl", "image/jxl", "image/jxl"},
 		{Builtin.TextType, "text", "plain", "txt", "text/plain", "text/plain"},
 		{Builtin.XMLType, "application", "xml", "xml", "application/xml", "application/xml"},
 		{Builtin.TOMLType, "application", "toml", "toml", "application/toml", "application/toml"},
@@ -154,5 +155,5 @@ func TestDefaultTypes(t *testing.T) {
 
 	}
 
-	c.Assert(len(DefaultTypes), qt.Equals, 47)
+	c.Assert(len(DefaultTypes), qt.Equals, 48)
 }

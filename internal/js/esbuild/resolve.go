@@ -73,6 +73,7 @@ var extensionToLoaderMapCSS = map[string]api.Loader{
 	".svg":  api.LoaderFile,
 	".webp": api.LoaderFile,
 	".avif": api.LoaderFile,
+	".jxl":  api.LoaderFile,
 
 	".woff":  api.LoaderFile,
 	".woff2": api.LoaderFile,
