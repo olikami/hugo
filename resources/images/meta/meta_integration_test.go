@@ -230,6 +230,31 @@ Home.
 	b.Assert(err.Error(), qt.Contains, `invalid metadata source "foo" in imaging.meta.sources config; must be one of [exif iptc xmp]`)
 }
 
+func TestJXLWidthAndHeight(t *testing.T) {
+	t.Parallel()
+
+	files := `
+-- assets/sunset.jxl --
+sourcefilename: ../../testdata/jxl/sunset.jxl
+-- layouts/home.html --
+{{ $jxl := resources.Get "sunset.jxl" }}
+{{ $ic := images.Config "/assets/sunset.jxl" }}
+$jxl.Width/Height: {{ $jxl.Width }}x{{ $jxl.Height }}|
+$ic.Width/Height: {{ $ic.Width }}x{{ $ic.Height }}|
+IsImageResourceWithMeta: {{ reflect.IsImageResourceWithMeta $jxl }}|
+IsImageResourceProcessable: {{ reflect.IsImageResourceProcessable $jxl }}|
+`
+
+	b := hugolib.Test(t, files)
+
+	b.AssertFileContent("public/index.html",
+		"$jxl.Width/Height: 900x562|",
+		"$ic.Width/Height: 900x562|",
+		"IsImageResourceWithMeta: true|",
+		"IsImageResourceProcessable: true|",
+	)
+}
+
 func TestAVIFMetaWidthAndHeight(t *testing.T) {
 	t.Parallel()
 

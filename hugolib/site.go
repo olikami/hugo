@@ -209,11 +209,13 @@ func NewHugoSites(cfg deps.DepsCfg) (*HugoSites, error) {
 		poolSizeKatex = 2
 		poolSizeWebP  = 1
 		poolSizeAvif  = 1
+		poolSizeJxl   = 1
 	)
 	if n := config.GetNumWorkerMultiplier(); n > 1 {
 		poolSizeKatex = min(n, 8)
 		poolSizeWebP = max(2, n/2)
 		poolSizeAvif = max(2, n/2)
+		poolSizeJxl = max(2, n/2)
 	}
 
 	var logger loggers.Logger
@@ -300,6 +302,14 @@ func NewHugoSites(cfg deps.DepsCfg) (*HugoSites, error) {
 				Memory:              imageWasmMemory,
 				Infof:               logger.InfoCommand("avif").Logf,
 				Warnf:               logger.WarnCommand("avif").Logf,
+			},
+			// JXL options.
+			warpc.Options{
+				CompilationCacheDir: compilationCacheDir,
+				PoolSize:            poolSizeJxl,
+				Memory:              imageWasmMemory,
+				Infof:               logger.InfoCommand("jxl").Logf,
+				Warnf:               logger.WarnCommand("jxl").Logf,
 			},
 		),
 	}

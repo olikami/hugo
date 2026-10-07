@@ -55,6 +55,7 @@ func GetWASMDeps() [][2]string {
 		{"code.videolan.org/videolan/dav1d", dav1dVersion},
 		{"github.com/AOMediaCodec/libavif", libavifVersion},
 		{"github.com/KaTeX/KaTeX", katexVersion},
+		{"github.com/libjxl/libjxl", libjxlVersion},
 		{"github.com/webmproject/libwebp", libwebpVersion},
 	}
 }
@@ -67,6 +68,9 @@ var webpWasm []byte
 
 //go:embed wasm/avif.wasm
 var avifWasm []byte
+
+//go:embed wasm/jxl.wasm
+var jxlWasm []byte
 
 // Header is in both the request and response.
 type Header struct {
@@ -818,6 +822,7 @@ type Dispatchers struct {
 	katex *lazyDispatcher[KatexInput, KatexOutput]
 	webp  *lazyDispatcher[WebpInput, WebpOutput]
 	avif  *lazyDispatcher[AvifInput, AvifOutput]
+	jxl   *lazyDispatcher[JxlInput, JxlOutput]
 }
 
 func (d *Dispatchers) Katex() (Dispatcher[KatexInput, KatexOutput], error) {
@@ -832,6 +837,10 @@ func (d *Dispatchers) Avif() (Dispatcher[AvifInput, AvifOutput], error) {
 	return d.avif.start()
 }
 
+func (d *Dispatchers) Jxl() (Dispatcher[JxlInput, JxlOutput], error) {
+	return d.jxl.start()
+}
+
 func (d *Dispatchers) NewWepCodec() (*WebpCodec, error) {
 	return &WebpCodec{
 		d: d.Webp,
@@ -844,15 +853,27 @@ func (d *Dispatchers) NewAvifCodec() (*AvifCodec, error) {
 	}, nil
 }
 
+func (d *Dispatchers) NewJxlCodec() (*JxlCodec, error) {
+	return &JxlCodec{
+		d: d.Jxl,
+	}, nil
+}
+
 func (d *Dispatchers) Close() error {
 	var errs []error
-	if d.katex.started {
-		if err := d.katex.dispatcher.Close(); err != nil {
-			errs = append(errs, err)
+	for _, c := range []struct {
+		started bool
+		closer  io.Closer
+	}{
+		{d.katex.started, d.katex.dispatcher},
+		{d.webp.started, d.webp.dispatcher},
+		{d.avif.started, d.avif.dispatcher},
+		{d.jxl.started, d.jxl.dispatcher},
+	} {
+		if !c.started {
+			continue
 		}
-	}
-	if d.webp.started {
-		if err := d.webp.dispatcher.Close(); err != nil {
+		if err := c.closer.Close(); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -865,12 +886,11 @@ func (d *Dispatchers) Close() error {
 // AllDispatchers creates all the dispatchers for the warpc package.
 // Note that the individual dispatchers are started lazily.
 // Remember to call Close on the returned Dispatchers when done.
-func AllDispatchers(katexOpts, webpOpts, avifOpts Options) *Dispatchers {
-	if err := katexOpts.init(); err != nil {
-		panic(err)
-	}
-	if err := webpOpts.init(); err != nil {
-		panic(err)
+func AllDispatchers(katexOpts, webpOpts, avifOpts, jxlOpts Options) *Dispatchers {
+	for _, opts := range []*Options{&katexOpts, &webpOpts, &avifOpts, &jxlOpts} {
+		if err := opts.init(); err != nil {
+			panic(err)
+		}
 	}
 	if katexOpts.Runtime.Data == nil {
 		katexOpts.Runtime = Binary{Name: "javy_quickjs_provider_v2", Data: quickjsWasm}
@@ -881,11 +901,13 @@ func AllDispatchers(katexOpts, webpOpts, avifOpts Options) *Dispatchers {
 
 	webpOpts.Main = Binary{Name: "webp", Data: webpWasm}
 	avifOpts.Main = Binary{Name: "avif", Data: avifWasm}
+	jxlOpts.Main = Binary{Name: "jxl", Data: jxlWasm}
 
 	dispatchers := &Dispatchers{
 		katex: &lazyDispatcher[KatexInput, KatexOutput]{opts: katexOpts},
 		webp:  &lazyDispatcher[WebpInput, WebpOutput]{opts: webpOpts},
 		avif:  &lazyDispatcher[AvifInput, AvifOutput]{opts: avifOpts},
+		jxl:   &lazyDispatcher[JxlInput, JxlOutput]{opts: jxlOpts},
 	}
 
 	return dispatchers

@@ -102,6 +102,42 @@ func TestDecodeConfig(t *testing.T) {
 	c.Assert(imagingConfig.Config.Imaging.Avif.EncoderSpeed, qt.Equals, 1)
 }
 
+func TestDecodeConfigJxl(t *testing.T) {
+	c := qt.New(t)
+
+	decode := func(m map[string]any) (JxlConfig, error) {
+		cfg, err := DecodeConfig(m)
+		if err != nil {
+			return JxlConfig{}, err
+		}
+		return cfg.Config.Imaging.Jxl, nil
+	}
+
+	jxl, err := decode(nil)
+	c.Assert(err, qt.IsNil)
+	c.Assert(jxl.Quality, qt.Equals, 75)
+	c.Assert(jxl.Compression, qt.Equals, "lossy")
+	c.Assert(jxl.Effort, qt.Equals, defaultJxlEffort)
+
+	jxl, err = decode(map[string]any{"quality": 66, "compression": "lossless"})
+	c.Assert(err, qt.IsNil)
+	c.Assert(jxl.Quality, qt.Equals, 66)
+	c.Assert(jxl.Compression, qt.Equals, "lossless")
+
+	jxl, err = decode(map[string]any{"jxl": map[string]any{"quality": 90, "compression": "LossLess", "effort": 7}})
+	c.Assert(err, qt.IsNil)
+	c.Assert(jxl.Quality, qt.Equals, 90)
+	c.Assert(jxl.Compression, qt.Equals, "lossless")
+	c.Assert(jxl.Effort, qt.Equals, 7)
+
+	_, err = decode(map[string]any{"jxl": map[string]any{"effort": 11}})
+	c.Assert(err, qt.ErrorMatches, ".*imaging.jxl.effort must be between 1 and 10, got 11")
+	_, err = decode(map[string]any{"jxl": map[string]any{"quality": 101}})
+	c.Assert(err, qt.ErrorMatches, ".*imaging.jxl.quality must be between 1 and 100.*")
+	_, err = decode(map[string]any{"jxl": map[string]any{"compression": "foo"}})
+	c.Assert(err, qt.ErrorMatches, ".*imaging.jxl.compression must be one of lossy or lossless.*")
+}
+
 func TestImageConfigPerFormat(t *testing.T) {
 	c := qt.New(t)
 
@@ -112,6 +148,7 @@ func TestImageConfigPerFormat(t *testing.T) {
 		"jpeg":        map[string]any{"quality": 80},
 		"webp":        map[string]any{"quality": 70, "hint": "picture", "compression": "lossless"},
 		"avif":        map[string]any{"quality": 55},
+		"jxl":         map[string]any{"quality": 85, "effort": 3},
 	})
 	c.Assert(err, qt.IsNil)
 
@@ -127,6 +164,13 @@ func TestImageConfigPerFormat(t *testing.T) {
 
 	c.Assert(conf("webp", "q33").Quality, qt.Equals, 33)
 	c.Assert(conf("avif", "q33").Quality, qt.Equals, 33)
+	c.Assert(conf("jxl").Quality, qt.Equals, 85)
+	c.Assert(conf("jxl", "q33").Quality, qt.Equals, 33)
+	c.Assert(conf("jxl").Effort, qt.Equals, 3)
+	c.Assert(conf("jxl").TargetFormat, qt.Equals, JXL)
+	c.Assert(conf("jxl").Compression, qt.Equals, "lossy")
+	c.Assert(conf("jxl", "lossless").Compression, qt.Equals, "lossless")
+	c.Assert(conf("webp").Effort, qt.Equals, 0)
 
 	c.Assert(conf("webp").Hint, qt.Equals, "picture")
 	c.Assert(conf("avif").Hint, qt.Equals, "text")

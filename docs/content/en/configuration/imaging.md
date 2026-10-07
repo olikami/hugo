@@ -22,7 +22,7 @@ These settings apply to all image formats.
 
 `compression`
 : {{< deprecated-in 0.163.0 />}}
-: Use the format-specific `compression` setting instead, applicable to [AVIF](#avif) and [WebP](#webp) images.
+: Use the format-specific `compression` setting instead, applicable to [AVIF](#avif), [JPEG XL](#jpeg-xl), and [WebP](#webp) images.
 
 `hint`
 : {{< deprecated-in 0.163.0 />}}
@@ -30,7 +30,7 @@ These settings apply to all image formats.
 
 `quality`
 : {{< deprecated-in 0.163.0 />}}
-: Use the format-specific `quality` setting instead, applicable to [AVIF](#avif), [JPEG](#jpeg), and [WebP](#webp) images.
+: Use the format-specific `quality` setting instead, applicable to [AVIF](#avif), [JPEG](#jpeg), [JPEG XL](#jpeg-xl), and [WebP](#webp) images.
 
 `resampleFilter`
 : (`string`) The algorithm used to calculate new pixels when resizing, fitting, or filling an image. Common case-insensitive options include `box`, `lanczos`, `catmullRom`, `mitchellNetravali`, `linear`, or `nearestNeighbor`. Default is `box`.
@@ -94,6 +94,26 @@ These settings apply when encoding JPEG images.
 `quality`
 : (`int`) The visual fidelity. Expressed as a whole number from `1` to `100`, inclusive. Lower numbers prioritize smaller file size, while higher numbers prioritize visual clarity. Default is `75`.
 
+## JPEG XL
+
+{{< new-in 0.168.0 />}}
+
+These settings apply when encoding JPEG XL images.
+
+> [!NOTE]
+> The [`Meta`][] method does not yet extract metadata from JPEG XL images.
+
+{{< code-toggle config=imaging.jxl />}}
+
+`compression`
+: (`string`) The encoding strategy. Options are `lossy` or `lossless`. Default is `lossy`.
+
+`effort`
+: (`int`) The encoder effort. Expressed as a whole number from `1` to `10`, inclusive, equivalent to the `-e` flag for the [`cjxl`][] CLI. Higher numbers prioritize compression efficiency at the cost of build time. Default is `3`.
+
+`quality`
+: (`int`) The visual fidelity when using `lossy` compression. Expressed as a whole number from `1` to `100`, inclusive, equivalent to the `-q` flag for the [`cjxl`][] CLI. Lower numbers prioritize smaller file size, while higher numbers prioritize visual clarity. Default is `75`.
+
 ## WebP
 
 {{< new-in 0.155.0 />}}
@@ -150,6 +170,7 @@ The following parameters allow you to control how Hugo extracts and filters meta
 
 [`Meta`]: /methods/resource/meta/
 [`avifenc`]: https://github.com/aomediacodec/libavif
+[`cjxl`]: https://github.com/libjxl/libjxl
 [`cwebp`]: https://developers.google.com/speed/webp/docs/cwebp
 [`muesli/smartcrop`]: https://github.com/muesli/smartcrop
 [hexadecimal color]: https://developer.mozilla.org/en-US/docs/Web/CSS/hex-color

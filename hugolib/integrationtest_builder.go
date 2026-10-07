@@ -1277,6 +1277,6 @@ type IntegrationTestConfig struct {
 	BuildCfg BuildCfg
 
 	// WarpcMemory, if set, overrides the memory limit in MiB for the WASM based
-	// image processors (WebP and AVIF). Used to provoke memory allocation failures.
+	// image processors (WebP, AVIF and JXL). Used to provoke memory allocation failures.
 	WarpcMemory int
 }

@@ -156,7 +156,11 @@ func NewImageProcessor(debugl, warnl logg.LevelLogger, wasmDispatchers *warpc.Di
 	if err != nil {
 		return nil, err
 	}
-	imageCodec := newCodec(webpCodec, avifCodec, debugl)
+	jxlCodec, err := wasmDispatchers.NewJxlCodec()
+	if err != nil {
+		return nil, err
+	}
+	imageCodec := newCodec(webpCodec, avifCodec, jxlCodec, debugl)
 
 	return &ImageProcessor{
 		Cfg:         cfg,
@@ -372,6 +376,7 @@ const (
 	BMP
 	WEBP
 	AVIF
+	JXL
 
 	// Below: We have no encoder/decoder for these, but we can provide metadata support for them (including width/height).
 	HEIF
@@ -414,7 +419,7 @@ func (f Format) SupportsTransparency() bool {
 // only — including AVIF here would make the pipeline preserve frames just to
 // drop them at encode time.
 func (f Format) SupportsAnimation() bool {
-	return f == GIF || f == WEBP
+	return f == GIF || f == WEBP || f == JXL
 }
 
 // DefaultExtension returns the default file extension of this format, starting with a dot.
@@ -440,6 +445,8 @@ func (f Format) MediaType() media.Type {
 		return media.Builtin.WEBPType
 	case AVIF:
 		return media.Builtin.AVIFType
+	case JXL:
+		return media.Builtin.JXLType
 	case HEIF:
 		return media.Builtin.HEIFType
 	case HEIC:
@@ -465,6 +472,8 @@ func (f Format) String() string {
 		return "WEBP"
 	case AVIF:
 		return "AVIF"
+	case JXL:
+		return "JXL"
 	case HEIF:
 		return "HEIF"
 	case HEIC:

@@ -60,6 +60,7 @@ var (
 		".gif":  GIF,
 		".webp": WEBP,
 		".avif": AVIF,
+		".jxl":  JXL,
 		".heif": HEIF,
 		".heic": HEIC,
 	}
@@ -73,6 +74,7 @@ var (
 		media.Builtin.GIFType.SubType:  GIF,
 		media.Builtin.WEBPType.SubType: WEBP,
 		media.Builtin.AVIFType.SubType: AVIF,
+		media.Builtin.JXLType.SubType:  JXL,
 	}
 
 	// We cannot process these formats, but we can provide metadata support for them (including width/height).
@@ -178,6 +180,7 @@ const (
 	defaultWebpUseSharpYuv  = false
 	defaultWebpMethod       = 2
 	defaultAvifEncoderSpeed = 10
+	defaultJxlEffort        = 3
 )
 
 func DecodeConfig(in map[string]any) (*config.ConfigNamespace[ImagingConfig, ImagingConfigInternal], error) {
@@ -201,6 +204,9 @@ func DecodeConfig(in map[string]any) (*config.ConfigNamespace[ImagingConfig, Ima
 				},
 				Avif: AvifConfig{
 					EncoderSpeed: defaultAvifEncoderSpeed,
+				},
+				Jxl: JxlConfig{
+					Effort: defaultJxlEffort,
 				},
 			},
 		}
@@ -373,8 +379,8 @@ type ImageConfig struct {
 	PreserveSourcePalette bool
 
 	// Quality ranges from 1 to 100 inclusive, higher is better.
-	// This is only relevant for JPEG and WEBP images.
-	// For WEBP it's only relevant for lossy encoding.
+	// This is only relevant for JPEG, WEBP, AVIF and JXL images.
+	// For WEBP and JXL it's only relevant for lossy encoding.
 	// Default is 75.
 	Quality int
 
@@ -404,6 +410,9 @@ type ImageConfig struct {
 
 	// AVIF-specific options.
 	EncoderSpeed int
+
+	// JXL-specific options.
+	Effort int
 
 	Width  int
 	Height int
@@ -436,6 +445,10 @@ func (c *ImageConfig) init(defaults ImagingConfigInternal, sourceFormat Format) 
 
 	if c.TargetFormat == AVIF {
 		c.EncoderSpeed = defaults.Imaging.Avif.EncoderSpeed
+	}
+
+	if c.TargetFormat == JXL {
+		c.Effort = defaults.Imaging.Jxl.Effort
 	}
 
 	if c.TargetFormat == WEBP {
@@ -497,16 +510,16 @@ func (i *ImagingConfigInternal) Compile(externalCfg *ImagingConfig) error {
 // from site (or language) config.
 type ImagingConfig struct {
 	// Default image quality setting (1-100). Used as the fallback for JPEG,
-	// WebP and AVIF when no per-format quality is set. When left unset, JPEG
-	// and WebP default to 75 and AVIF to 60 (its scale differs perceptually).
+	// WebP, AVIF and JXL when no per-format quality is set. When left unset, JPEG,
+	// WebP and JXL default to 75 and AVIF to 60 (its scale differs perceptually).
 	// Deprecated in v0.163.0: set the quality per format instead, see
-	// imaging.jpeg.quality, imaging.webp.quality and imaging.avif.quality.
+	// imaging.jpeg.quality, imaging.webp.quality, imaging.avif.quality and imaging.jxl.quality.
 	Quality int `json:"-"`
 
 	// Compression method to use.
 	// One of "lossy" or "lossless".
-	// Note that lossless is currently only supported for WebP and AVIF.
-	// Deprecated in v0.163.0: set the compression method per format instead, see imaging.webp.compression and imaging.avif.compression.
+	// Note that lossless is currently only supported for WebP, AVIF and JXL.
+	// Deprecated in v0.163.0: set the compression method per format instead, see imaging.webp.compression, imaging.avif.compression and imaging.jxl.compression.
 	Compression string `json:"-"`
 
 	// Resample filter to use in resize operations.
@@ -530,6 +543,7 @@ type ImagingConfig struct {
 	Jpeg JpegConfig
 	Webp WebpConfig
 	Avif AvifConfig
+	Jxl  JxlConfig
 }
 
 func (cfg *ImagingConfig) qualityFor(f Format) int {
@@ -540,6 +554,8 @@ func (cfg *ImagingConfig) qualityFor(f Format) int {
 		return cfg.Webp.Quality
 	case AVIF:
 		return cfg.Avif.Quality
+	case JXL:
+		return cfg.Jxl.Quality
 	}
 	return 0
 }
@@ -550,6 +566,8 @@ func (cfg *ImagingConfig) compressionFor(f Format) string {
 		return cfg.Webp.Compression
 	case AVIF:
 		return cfg.Avif.Compression
+	case JXL:
+		return cfg.Jxl.Compression
 	}
 	return ""
 }
@@ -585,6 +603,9 @@ func (cfg *ImagingConfig) init() error {
 	}
 	if err := cfg.Avif.init(cfg); err != nil {
 		return fmt.Errorf("invalid avif config: %w", err)
+	}
+	if err := cfg.Jxl.init(cfg); err != nil {
+		return fmt.Errorf("invalid jxl config: %w", err)
 	}
 	if cfg.Quality < 0 || cfg.Quality > 100 {
 		return fmt.Errorf("imaging.quality must be between 1 and 100 inclusive, got %d", cfg.Quality)
@@ -741,6 +762,49 @@ func (c *AvifConfig) init(ic *ImagingConfig) error {
 		return fmt.Errorf("imaging.avif.quality must be between 1 and 100 inclusive, got %d", c.Quality)
 	}
 
+	return nil
+}
+
+// JxlConfig holds JPEG XL-specific encoding configuration.
+type JxlConfig struct {
+	// Quality setting (1-100). Falls back to the global imaging.quality if unset.
+	// Only relevant for lossy encoding.
+	Quality int
+
+	// Compression method to use.
+	// One of "lossy" or "lossless".
+	Compression string
+
+	// Encoder effort, 1 (fastest) to 10 (slowest, smallest files).
+	// Default is 3.
+	Effort int
+}
+
+func (c *JxlConfig) init(ic *ImagingConfig) error {
+	if c.Compression == "" {
+		c.Compression = ic.Compression
+	}
+	if c.Quality == 0 {
+		c.Quality = ic.Quality
+	}
+	if c.Compression == "" {
+		c.Compression = defaultCompression
+	}
+	if c.Quality == 0 {
+		c.Quality = 75
+	}
+
+	c.Compression = strings.ToLower(c.Compression)
+
+	if c.Effort < 1 || c.Effort > 10 {
+		return fmt.Errorf("imaging.jxl.effort must be between 1 and 10, got %d", c.Effort)
+	}
+	if !compressionMethods[c.Compression] {
+		return fmt.Errorf("imaging.jxl.compression must be one of lossy or lossless, got %q", c.Compression)
+	}
+	if c.Quality < 1 || c.Quality > 100 {
+		return fmt.Errorf("imaging.jxl.quality must be between 1 and 100 inclusive, got %d", c.Quality)
+	}
 	return nil
 }
 

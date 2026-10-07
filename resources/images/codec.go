@@ -63,11 +63,12 @@ type EncodeDecoder interface {
 type Codec struct {
 	webp   EncodeDecoder
 	avif   EncodeDecoder
+	jxl    EncodeDecoder
 	debugl logg.LevelLogger
 }
 
-func newCodec(webp, avif EncodeDecoder, debugl logg.LevelLogger) *Codec {
-	return &Codec{webp: webp, avif: avif, debugl: debugl}
+func newCodec(webp, avif, jxl EncodeDecoder, debugl logg.LevelLogger) *Codec {
+	return &Codec{webp: webp, avif: avif, jxl: jxl, debugl: debugl}
 }
 
 func (d *Codec) EncodeTo(conf ImageConfig, w io.Writer, img image.Image) error {
@@ -147,6 +148,13 @@ func (d *Codec) EncodeTo(conf ImageConfig, w io.Writer, img image.Image) error {
 			"hint":         conf.Hint,
 		}
 		return d.avif.Encode(w, img, opts)
+	case JXL:
+		opts := map[string]any{
+			"compression": conf.Compression,
+			"quality":     conf.Quality,
+			"effort":      conf.Effort,
+		}
+		return d.jxl.Encode(w, img, opts)
 	case WEBP:
 		// Convert bool to int because the C code reads it as a number.
 		useSharpYuvInt := 0
@@ -198,6 +206,8 @@ func (d *Codec) DecodeFormat(f Format, r io.Reader) (image.Image, error) {
 		return bmp.Decode(r)
 	case AVIF:
 		return d.avif.Decode(r)
+	case JXL:
+		return d.jxl.Decode(r)
 	case WEBP:
 		img, err := d.webp.Decode(r)
 		if err == nil {
@@ -255,6 +265,10 @@ func (d *Codec) DecodeConfig(f Format, r io.Reader) (image.Config, string, error
 		format = f
 	}
 	r = rr
+	if format == JXL {
+		conf, err := d.jxl.DecodeConfig(r)
+		return conf, "jxl", err
+	}
 	if format.UseImageMetaConfigDecoder() {
 		rs, err := hugio.NewReadSeekerNoOpCloserFromReader(r)
 		if err != nil {
@@ -307,6 +321,9 @@ const (
 	magicWebp = "RIFF????WEBPVP8"
 	// The GIF file header is 6 bytes long and starts with "GIF87a" or "GIF89a".
 	magicGif = "GIF8???"
+	// JPEG XL is either a bare codestream or wrapped in an ISOBMFF container.
+	magicJxlCodestream = "\xff\x0a"
+	magicJxlContainer  = "\x00\x00\x00\x0cJXL \x0d\x0a\x87\x0a"
 )
 
 var (
@@ -323,11 +340,13 @@ type magicFormat struct {
 var magicFormats = []magicFormat{
 	{magic: magicWebp, format: WEBP},
 	{magic: magicGif, format: GIF},
+	{magic: magicJxlCodestream, format: JXL},
+	{magic: magicJxlContainer, format: JXL},
 }
 
 // formatFromImage determines the image format from the magic bytes.
 // Note that this is only a partial implementation,
-// as we currently only need WebP, GIF and AVIF detection.
+// as we currently only need WebP, GIF, AVIF and JXL detection.
 // The others can be handled by the standard library.
 func formatFromImage(r peekReader) (Format, error) {
 	for _, mf := range magicFormats {

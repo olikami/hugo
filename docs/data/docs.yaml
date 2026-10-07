@@ -1454,6 +1454,10 @@ config:
       includeFields: ''
     jpeg:
       quality: 75
+    jxl:
+      compression: lossy
+      effort: 3
+      quality: 75
     meta:
       fields:
       - '! *{GPS,Exif,Exposure[MPB],Contrast,Resolution,Sharp,JPEG,Metering,Sensing,Saturation,ColorSpace,Flash,WhiteBalance}*'
@@ -1662,6 +1666,10 @@ config:
       - jpe
       - jif
       - jfif
+    image/jxl:
+      delimiter: .
+      suffixes:
+      - jxl
     image/png:
       delimiter: .
       suffixes:
